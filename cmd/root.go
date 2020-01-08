@@ -17,13 +17,19 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 
+	codeowners "github.com/alecharmon/codeowners"
+	"github.com/alecharmon/codeowners-cli/core"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
+var head string
+var base string
+var dir string
+var file string
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
@@ -36,10 +42,39 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Print("hello world")
+		if file == "" {
+			file = "./CODEOWNERS"
+		}
+		if dir == "" {
+			dir = "./"
+		}
+		success, err := core.OpenFile(file)
+		if !success {
+			fmt.Printf("Could not open on %s, %v \n", file, err)
+			return
+		}
+		fmt.Printf("Running coverage check on %s \n", file)
+		fmt.Printf("initializing repo at `%s` \n", dir)
+		if head != "head" {
+			fmt.Printf("Between %s...%s \n", base, head)
+
+		}
+
+		files, err := core.Diff(dir, head, base)
+		if err != nil {
+			fmt.Println("Coould not load files from git repo")
+		}
+
+		co := codeowners.BuildFromFile(file)
+
+		for _, file := range files {
+			owners := co.FindOwners(file)
+			if len(owners) == 0 {
+				fmt.Printf("No Owner(s) found for %s \n", file)
+			}
+		}
 	},
 }
 
@@ -55,10 +90,10 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "head", "head", "Latest commit to be used for tests")
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "base", "master", "Base commit to be used for tests")
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "dir", viper.GetString("CODEOWNER_CI_DIRECTORY"), "Directory of the related project (default is PWD)")
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "file", viper.GetString("CODEOWNER_CI_FILE"), "CODEOWNER file to use for tests (default is PWD/CODEOWNER)")
+	rootCmd.PersistentFlags().StringVar(&head, "head", "head", "Latest commit to be used for tests")
+	rootCmd.PersistentFlags().StringVar(&base, "base", "master", "Base commit to be used for tests")
+	rootCmd.PersistentFlags().StringVar(&dir, "dir", viper.GetString("CODEOWNER_CI_DIRECTORY"), "Directory of the related project (default is PWD)")
+	rootCmd.PersistentFlags().StringVar(&file, "file", viper.GetString("CODEOWNER_CI_FILE"), "CODEOWNER file to use for tests (default is PWD/CODEOWNER)")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.codeowners-ci.yaml)")
 }
 

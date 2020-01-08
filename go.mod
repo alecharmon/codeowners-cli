@@ -3,7 +3,7 @@ module github.com/alecharmon/codeowners-cli
 go 1.13
 
 require (
-	github.com/alecharmon/codeowners v1.0.1 // indirect
+	github.com/alecharmon/codeowners v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/cobra v0.0.5

@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/alec-harmon/codeowners-cli/cmd"
+import "github.com/alecharmon/codeowners-cli/cmd"
 
 func main() {
 	cmd.Execute()
