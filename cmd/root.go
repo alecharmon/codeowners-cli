@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
+
 	codeowners "github.com/alecharmon/codeowners"
 	"github.com/alecharmon/codeowners-cli/core"
 	homedir "github.com/mitchellh/go-homedir"
@@ -30,18 +32,14 @@ var head string
 var base string
 var dir string
 var file string
+var verbose bool
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "codeowners-ci",
+	Use:   "codeowners-cli",
 	Short: "Determine coverage of explicit ownership and check ",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `Codeowners-cli is meant to be a light weight tool used to both validate the CODEOWNER file as well as 
+	establish coverage of which files declared to have ownership`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if file == "" {
@@ -50,9 +48,9 @@ to quickly create a Cobra application.`,
 		if dir == "" {
 			dir = "./"
 		}
-		success, err := core.OpenFile(file)
-		if !success {
-			fmt.Printf("Could not open on %s, %v \n", file, err)
+		co, err := codeowners.BuildFromFile(file)
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
 		fmt.Printf("Running coverage check on %s \n", file)
@@ -64,17 +62,26 @@ to quickly create a Cobra application.`,
 
 		files, err := core.Diff(dir, head, base)
 		if err != nil {
-			fmt.Println("Coould not load files from git repo")
+			fmt.Println("Could not load files from git repo")
 		}
 
-		co := codeowners.BuildFromFile(file)
+		//Providing uniqueness via a map
+		without := make(map[string]bool)
+		with := make(map[string]bool)
 
 		for _, file := range files {
 			owners := co.FindOwners(file)
 			if len(owners) == 0 {
-				fmt.Printf("No Owner(s) found for %s \n", file)
+				color.Red("No Owner(s) found for %s \n", file)
+				without[file] = true
+			} else {
+				with[file] = true
 			}
 		}
+
+		total := float64(len(with) + len(without))
+		color.New(color.FgGreen).Printf("✅ %d files between commits that have defined code owners (~%%%.2f) \n", len(with), float64(len(with))/total)
+		color.New(color.FgRed).Printf("❌ %d files between commits are missing defined code owners (~%%%.2f) \n", len(without), float64(len(without))/total)
 	},
 }
 
@@ -92,6 +99,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&head, "head", "head", "Latest commit to be used for tests")
 	rootCmd.PersistentFlags().StringVar(&base, "base", "master", "Base commit to be used for tests")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Show verbose output")
 	rootCmd.PersistentFlags().StringVar(&dir, "dir", viper.GetString("CODEOWNER_CI_DIRECTORY"), "Directory of the related project (default is PWD)")
 	rootCmd.PersistentFlags().StringVar(&file, "file", viper.GetString("CODEOWNER_CI_FILE"), "CODEOWNER file to use for tests (default is PWD/CODEOWNER)")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.codeowners-ci.yaml)")

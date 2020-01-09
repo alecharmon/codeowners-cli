@@ -89,6 +89,6 @@ func generateKeys(m map[string]bool) []string {
 
 func recoverGettingChangedFiles(c *object.Change) {
 	if r := recover(); r != nil {
-		fmt.Println("Failed to fetch files from ", c.From.Name)
+		fmt.Println("Failed to fetch files from ", c.From.Tree.Hash)
 	}
 }
