@@ -7,6 +7,8 @@ github.com/alecharmon/codeowners v1.0.2 h1:toHjYiKZ/bJ56Z8oKudc8S229C0LWapKOGmF0
 github.com/alecharmon/codeowners v1.0.2/go.mod h1:4dagPUJZB7LKtxEhyJEkc3zhE0GdocHzyJvvB7jG8cg=
 github.com/alecharmon/codeowners v1.0.3 h1:AlECtC4zccQvCQPfHv4WrPyAZ0wZhZ748eUStQPNoUk=
 github.com/alecharmon/codeowners v1.0.3/go.mod h1:4dagPUJZB7LKtxEhyJEkc3zhE0GdocHzyJvvB7jG8cg=
+github.com/alecharmon/codeowners v1.0.4 h1:df/u0XdMqfK+91SA86JTmO+Gpx0LXskJw/Hs22iqcaw=
+github.com/alecharmon/codeowners v1.0.4/go.mod h1:4dagPUJZB7LKtxEhyJEkc3zhE0GdocHzyJvvB7jG8cg=
 github.com/alecharmon/trie v0.1.1 h1:COYlxcYYUNjt7Sr78ATMufRjpDSpZ9QJdBxyenkb20w=
 github.com/alecharmon/trie v0.1.1/go.mod h1:E8KgVYIphdr+05Ft+bR+RYXE/bmOUV68Qmpcv7S5/eA=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=

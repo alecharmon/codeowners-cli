@@ -7,7 +7,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-func Diff(repo_path, from, to string) ([]string, error) {
+func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	files := make(map[string]bool)
 	r, err := git.PlainOpen(repo_path)
 	if err != nil {
@@ -31,11 +31,10 @@ func Diff(repo_path, from, to string) ([]string, error) {
 			break
 		}
 
-		fmt.Println(commit.Hash.String())
+		fmt.Fprintf(logger, "HASH: %s \n", commit.Hash.String())
 		currentTree, err := commit.Tree()
 		if err != nil {
 			continue
-			return generateKeys(files), err
 		}
 
 		if prevCommit == nil {
@@ -50,7 +49,7 @@ func Diff(repo_path, from, to string) ([]string, error) {
 		}
 
 		for _, c := range changes {
-			for _, path := range getChangedFiles(c) {
+			for _, path := range getChangedFiles(c, logger) {
 				if _, exists := files[path]; !exists {
 					files[path] = true
 				}
@@ -69,8 +68,8 @@ func Diff(repo_path, from, to string) ([]string, error) {
 	return generateKeys(files), nil
 }
 
-func getChangedFiles(c *object.Change) (res []string) {
-	defer recoverGettingChangedFiles(c)
+func getChangedFiles(c *object.Change, logger *Logger) (res []string) {
+	defer recoverGettingChangedFiles(c, logger)
 	c.To.Tree.Files().ForEach(func(f *object.File) error {
 		res = append(res, f.Name)
 		return nil
@@ -87,8 +86,8 @@ func generateKeys(m map[string]bool) []string {
 	return keys
 }
 
-func recoverGettingChangedFiles(c *object.Change) {
+func recoverGettingChangedFiles(c *object.Change, logger *Logger) {
 	if r := recover(); r != nil {
-		fmt.Println("Failed to fetch files from ", c.From.Tree.Hash)
+		fmt.Fprintf(logger, "Failed to fetch files from %s \n", c.From.Tree.Hash)
 	}
 }

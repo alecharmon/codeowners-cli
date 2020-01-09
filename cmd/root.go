@@ -21,8 +21,8 @@ import (
 
 	"github.com/fatih/color"
 
-	codeowners "github.com/alecharmon/codeowners"
 	"github.com/alecharmon/codeowners-cli/core"
+	codeowners "github.com/alecharmon/codeowners/pkg"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -53,14 +53,14 @@ var rootCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
+		fmt.Printf("Initializing repo at `%s` \n", dir)
 		fmt.Printf("Running coverage check on %s \n", file)
-		fmt.Printf("initializing repo at `%s` \n", dir)
 		if head != "head" {
 			fmt.Printf("Between %s...%s \n", base, head)
 
 		}
 
-		files, err := core.Diff(dir, head, base)
+		files, err := core.Diff(dir, head, base, core.NewLogger(verbose))
 		if err != nil {
 			fmt.Println("Could not load files from git repo")
 		}
@@ -82,6 +82,9 @@ var rootCmd = &cobra.Command{
 		total := float64(len(with) + len(without))
 		color.New(color.FgGreen).Printf("✅ %d files between commits that have defined code owners (~%%%.2f) \n", len(with), float64(len(with))/total)
 		color.New(color.FgRed).Printf("❌ %d files between commits are missing defined code owners (~%%%.2f) \n", len(without), float64(len(without))/total)
+		if len(without) > 0 {
+			os.Exit(1)
+		}
 	},
 }
 
