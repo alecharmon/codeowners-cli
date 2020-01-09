@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -30,6 +31,7 @@ func Diff(repo_path, from, to string) ([]string, error) {
 			break
 		}
 
+		fmt.Println(commit.Hash.String())
 		currentTree, err := commit.Tree()
 		if err != nil {
 			continue
@@ -48,12 +50,12 @@ func Diff(repo_path, from, to string) ([]string, error) {
 		}
 
 		for _, c := range changes {
-			c.To.Tree.Files().ForEach(func(f *object.File) error {
-				if _, exists := files[f.Name]; !exists {
-					files[f.Name] = true
+			for _, path := range getChangedFiles(c) {
+				if _, exists := files[path]; !exists {
+					files[path] = true
 				}
-				return nil
-			})
+			}
+
 		}
 
 		if commit.Hash.String() == plumbing.NewHash(to).String() {
@@ -67,10 +69,26 @@ func Diff(repo_path, from, to string) ([]string, error) {
 	return generateKeys(files), nil
 }
 
+func getChangedFiles(c *object.Change) (res []string) {
+	defer recoverGettingChangedFiles(c)
+	c.To.Tree.Files().ForEach(func(f *object.File) error {
+		res = append(res, f.Name)
+		return nil
+	})
+	return res
+}
+
 func generateKeys(m map[string]bool) []string {
+
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func recoverGettingChangedFiles(c *object.Change) {
+	if r := recover(); r != nil {
+		fmt.Println("Failed to fetch files from ", c.From.Name)
+	}
 }
