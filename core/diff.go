@@ -2,13 +2,17 @@ package core
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/gitignore"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	files := make(map[string]bool)
+	repo_path, err := filepath.Abs(repo_path)
 	r, err := git.PlainOpen(repo_path)
 	if err != nil {
 		panic(err)
@@ -22,6 +26,10 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	}
 	defer commits.Close()
 
+	worktree, _ := r.Worktree()
+
+	patterns, err := gitignore.ReadPatterns(worktree.Filesystem, nil)
+	gitignoreMatcher := gitignore.NewMatcher(patterns)
 	var prevCommit *object.Commit
 	var prevTree *object.Tree
 
@@ -50,6 +58,10 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 
 		for _, c := range changes {
 			for _, path := range getChangedFiles(c, logger) {
+				if gitignoreMatcher.Match(filepath.SplitList(path), false) {
+					fmt.Fprintf(logger, "ignored file '%s' since it was in .gitignore", path)
+					continue
+				}
 				if _, exists := files[path]; !exists {
 					files[path] = true
 				}
