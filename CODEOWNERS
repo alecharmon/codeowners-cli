@@ -1,1 +1,8 @@
 *.go @alecharmon
+
+LICENSE @alecharmon
+README.md @alecharmon
+go.mod @alecharmon
+CODEOWNERS @alecharmon
+go.sum @alecharmon
+.gitignore @alecharmon
