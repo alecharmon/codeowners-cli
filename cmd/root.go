@@ -79,12 +79,13 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		total := float64(len(with) + len(without))
-		color.New(color.FgGreen).Printf("✅ %d files between commits that have defined code owners (~%%%.2f) \n", len(with), float64(len(with))/total)
-		color.New(color.FgRed).Printf("❌ %d files between commits are missing defined code owners (~%%%.2f) \n", len(without), float64(len(without))/total)
 		if len(without) > 0 {
+			total := float64(len(with) + len(without))
+			color.New(color.FgGreen).Printf("✅ %d files between commits that have defined maintainers (~%%%.2f) \n", len(with), (float64(len(with))/total)*100)
+			color.New(color.FgRed).Printf("❌ %d files between commits are missing maintainers (~%%%.2f) \n", len(without), (float64(len(without))/total)*100)
 			os.Exit(1)
 		}
+		color.New(color.FgGreen).Printf("🐣 Hell Ya, All files have declared maintainers\n")
 	},
 }
 
