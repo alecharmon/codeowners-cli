@@ -39,7 +39,7 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 			break
 		}
 
-		fmt.Fprintf(logger, "HASH: %s \n", commit.Hash.String())
+		fmt.Fprintf(logger, "Commit Msg: %s \n", commit.String())
 		currentTree, err := commit.Tree()
 		if err != nil {
 			continue
@@ -52,21 +52,23 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 		}
 
 		changes, err := currentTree.Diff(prevTree)
+
 		if err != nil {
 			return generateKeys(files), err
 		}
 
 		for _, c := range changes {
-			for _, path := range getChangedFiles(c, logger) {
-				if gitignoreMatcher.Match(filepath.SplitList(path), false) {
-					fmt.Fprintf(logger, "ignored file '%s' since it was in .gitignore", path)
-					continue
-				}
-				if _, exists := files[path]; !exists {
-					files[path] = true
-				}
-			}
 
+			fmt.Fprintf(logger, "Changed File %v \n", c.To.Name)
+			path := c.To.Name
+
+			if gitignoreMatcher.Match(filepath.SplitList(path), false) {
+				fmt.Fprintf(logger, "ignored file '%s' since it was in .gitignore", path)
+				continue
+			}
+			if _, exists := files[path]; !exists {
+				files[path] = true
+			}
 		}
 
 		if commit.Hash.String() == plumbing.NewHash(to).String() {
@@ -78,15 +80,6 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	}
 
 	return generateKeys(files), nil
-}
-
-func getChangedFiles(c *object.Change, logger *Logger) (res []string) {
-	defer recoverGettingChangedFiles(c, logger)
-	c.To.Tree.Files().ForEach(func(f *object.File) error {
-		res = append(res, f.Name)
-		return nil
-	})
-	return res
 }
 
 func generateKeys(m map[string]bool) []string {
