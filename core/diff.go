@@ -2,7 +2,9 @@ package core
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -15,7 +17,15 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	repo_path, err := filepath.Abs(repo_path)
 	r, err := git.PlainOpen(repo_path)
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	worktree, _ := r.Worktree()
+	patterns, err := gitignore.ReadPatterns(worktree.Filesystem, nil)
+	gitignoreMatcher := gitignore.NewMatcher(patterns)
+
+	if to == "master" && from == "head" {
+		return getAllFiles(worktree.Filesystem.Root(), gitignoreMatcher, logger)
 	}
 
 	// ... retrieves the commit history
@@ -26,10 +36,6 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	}
 	defer commits.Close()
 
-	worktree, _ := r.Worktree()
-
-	patterns, err := gitignore.ReadPatterns(worktree.Filesystem, nil)
-	gitignoreMatcher := gitignore.NewMatcher(patterns)
 	var prevCommit *object.Commit
 	var prevTree *object.Tree
 
@@ -61,7 +67,9 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 
 			fmt.Fprintf(logger, "Changed File %v \n", c.To.Name)
 			path := c.To.Name
-
+			if len(path) < 1 {
+				continue
+			}
 			if gitignoreMatcher.Match(filepath.SplitList(path), false) {
 				fmt.Fprintf(logger, "ignored file '%s' since it was in .gitignore", path)
 				continue
@@ -80,6 +88,39 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 	}
 
 	return generateKeys(files), nil
+}
+
+func getAllFiles(path string, matcher gitignore.Matcher, logger *Logger) ([]string, error) {
+	files := make(map[string]bool)
+
+	fmt.Fprintf(logger, "Getting all files")
+	pathL := len(path) + 1
+	err := filepath.Walk(path,
+		func(p string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			p = string([]rune(p)[pathL:])
+
+			if strings.Contains(p, ".git/") || strings.Contains(p, ".git/") {
+				return nil
+			}
+			if matcher.Match(filepath.SplitList(p), false) {
+				fmt.Fprintf(logger, "ignored file '%s' since it was in .gitignore", path)
+				return nil
+			}
+
+			if _, exists := files[p]; !exists {
+				files[p] = true
+			}
+			return nil
+		})
+	return generateKeys(files), err
 }
 
 func generateKeys(m map[string]bool) []string {
