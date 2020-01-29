@@ -1,4 +1,3 @@
-wip
 ### Codeowners CLI tool 
 
 Find files that are not covered by a repo's code owner file
