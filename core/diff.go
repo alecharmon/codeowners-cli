@@ -10,9 +10,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/gitignore"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/utils/merkletrie"
 )
 
-func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
+func Diff(repo_path, from, to string, newFilesOnly bool, logger *Logger) ([]string, error) {
 	files := make(map[string]bool)
 	repo_path, err := filepath.Abs(repo_path)
 	r, err := git.PlainOpen(repo_path)
@@ -64,7 +65,16 @@ func Diff(repo_path, from, to string, logger *Logger) ([]string, error) {
 		}
 
 		for _, c := range changes {
-
+			action, err := c.Action()
+			if err != nil {
+				continue
+			}
+			if newFilesOnly && (action != merkletrie.Insert) {
+				continue
+			}
+			if action == merkletrie.Delete {
+				continue
+			}
 			fmt.Fprintf(logger, "Changed File %v \n", c.To.Name)
 			path := c.To.Name
 			if len(path) < 1 {
