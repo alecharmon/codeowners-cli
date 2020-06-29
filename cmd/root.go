@@ -54,6 +54,7 @@ var rootCmd = &cobra.Command{
 		//Providing uniqueness via a map
 		without := make(map[string]bool)
 		with := make(map[string]bool)
+		allOwners := make(map[string]bool)
 
 		for _, file := range files {
 			owners := co.FindOwners(file)
@@ -62,6 +63,9 @@ var rootCmd = &cobra.Command{
 				without[file] = true
 			} else {
 				with[file] = true
+				for _, owner := range owners {
+					allOwners[owner] = true
+				}
 			}
 		}
 
@@ -69,9 +73,21 @@ var rootCmd = &cobra.Command{
 			total := float64(len(with) + len(without))
 			color.New(color.FgGreen).Printf("✅ %d files between commits that have defined maintainers (~%%%.2f) \n", len(with), (float64(len(with))/total)*100)
 			color.New(color.FgRed).Printf("❌ %d files between commits are missing maintainers (~%%%.2f) \n", len(without), (float64(len(without))/total)*100)
+
+		} else {
+			color.New(color.FgGreen).Printf("🐣 Hell Ya, All files have declared maintainers\n")
+
+		}
+		if len(allOwners) > 0 {
+			fmt.Printf("These are the declared maintainers for the analyzed files:\n")
+			for owner := range allOwners {
+				fmt.Println(owner)
+			}
+		}
+
+		if len(without) > 0 {
 			os.Exit(1)
 		}
-		color.New(color.FgGreen).Printf("🐣 Hell Ya, All files have declared maintainers\n")
 	},
 }
 
