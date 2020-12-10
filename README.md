@@ -1,5 +1,5 @@
 ### Codeowners CLI tool 
-Find files that are not covered by a repo's code owner file. Built on [codeowners](http://github.com/alecharmon), a complete CODEOWNERS parser and blazing fast lookup tool written in Go.
+Find files that are not covered by a repo's code owner file. Built on [codeowners](http://github.com/alecharmon/codeowners), a complete CODEOWNERS parser and blazing fast lookup tool written in Go.
 
 
 
