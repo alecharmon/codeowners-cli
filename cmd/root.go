@@ -28,7 +28,7 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if file == "" {
-			file = "./CODEOWNERS"
+			file = ".github/CODEOWNERS"
 		}
 		if dir == "" {
 			dir = "./"
