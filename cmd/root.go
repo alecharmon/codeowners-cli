@@ -7,7 +7,6 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/alecharmon/codeowners-cli/core"
-	codeowners "github.com/alecharmon/codeowners/pkg"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,11 +33,7 @@ var rootCmd = &cobra.Command{
 		if dir == "" {
 			dir = "./"
 		}
-		co, err := codeowners.BuildFromFile(file)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		co := core.MustGetCodeOwners(file)
 		fmt.Printf("Initializing repo at `%s` \n", dir)
 		fmt.Printf("Running coverage check on %s \n", file)
 		if head != "head" {
@@ -49,6 +44,7 @@ var rootCmd = &cobra.Command{
 		files, err := core.Diff(dir, head, base, newFilesOnly, core.NewLogger(verbose))
 		if err != nil {
 			fmt.Println("Could not load files from git repo")
+			os.Exit(1)
 		}
 
 		//Providing uniqueness via a map
@@ -91,9 +87,27 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+var verifyCmd = &cobra.Command{
+	Use:   "verify",
+	Short: "Verifies that your code owner file is valid",
+	Run: func(cmd *cobra.Command, args []string) {
+		if file == "" {
+			file = ".github/CODEOWNERS"
+		}
+		if dir == "" {
+			dir = "./"
+		}
+
+		fmt.Printf("Initializing repo at `%s` \n", dir)
+		core.MustGetCodeOwners(file)
+		fmt.Println("Codeowner file initialized without any errors")
+	},
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	rootCmd.AddCommand(verifyCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -110,6 +124,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&dir, "dir", viper.GetString("CODEOWNER_CI_DIRECTORY"), "Directory of the related project (default is PWD)")
 	rootCmd.PersistentFlags().StringVar(&file, "file", viper.GetString("CODEOWNER_CI_FILE"), "CODEOWNER file to use for tests (default is PWD/CODEOWNER)")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.codeowners-ci.yaml)")
+
+	verifyCmd.PersistentFlags().StringVar(&dir, "dir", viper.GetString("CODEOWNER_CI_DIRECTORY"), "Directory of the related project (default is PWD)")
+	verifyCmd.PersistentFlags().StringVar(&file, "file", viper.GetString("CODEOWNER_CI_FILE"), "CODEOWNER file to use for tests (default is PWD/CODEOWNER)")
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -13,12 +13,12 @@ import (
 	"gopkg.in/src-d/go-git.v4/utils/merkletrie"
 )
 
-func Diff(repo_path, from, to string, newFilesOnly bool, logger *Logger) ([]string, error) {
+func Diff(repo_path, from, to string, newFilesOnly bool, logger *Logger) ([]string, []error) {
 	files := make(map[string]bool)
 	repo_path, err := filepath.Abs(repo_path)
 	r, err := git.PlainOpen(repo_path)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
 	worktree, _ := r.Worktree()
@@ -33,7 +33,7 @@ func Diff(repo_path, from, to string, newFilesOnly bool, logger *Logger) ([]stri
 	commits, err := r.Log(&git.LogOptions{From: plumbing.NewHash(from)})
 
 	if err != nil {
-		return generateKeys(files), err
+		return generateKeys(files), []error{err}
 	}
 	defer commits.Close()
 
@@ -61,7 +61,7 @@ func Diff(repo_path, from, to string, newFilesOnly bool, logger *Logger) ([]stri
 		changes, err := currentTree.Diff(prevTree)
 
 		if err != nil {
-			return generateKeys(files), err
+			return generateKeys(files), []error{err}
 		}
 
 		for _, c := range changes {
@@ -100,7 +100,7 @@ func Diff(repo_path, from, to string, newFilesOnly bool, logger *Logger) ([]stri
 	return generateKeys(files), nil
 }
 
-func getAllFiles(path string, matcher gitignore.Matcher, logger *Logger) ([]string, error) {
+func getAllFiles(path string, matcher gitignore.Matcher, logger *Logger) ([]string, []error) {
 	files := make(map[string]bool)
 
 	fmt.Fprintf(logger, "Getting all files")
@@ -130,7 +130,7 @@ func getAllFiles(path string, matcher gitignore.Matcher, logger *Logger) ([]stri
 			}
 			return nil
 		})
-	return generateKeys(files), err
+	return generateKeys(files), []error{err}
 }
 
 func generateKeys(m map[string]bool) []string {
